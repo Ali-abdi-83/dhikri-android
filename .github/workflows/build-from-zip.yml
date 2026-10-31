@@ -13,8 +13,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Extract project
-        run: unzip -q Dhikri_Project.zip -d extracted
-
+        run: 
+run: unzip -q Dhikri_Project_Adhkar_v2.zip -d extracted
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
