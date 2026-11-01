@@ -153,6 +153,71 @@ jobs:
                           Text("تُحفظ إنجازاتك على هذا الهاتف، وتتجدد صفحة المتابعة مع كل يوم جمعة جديد.", color = Muted, fontSize = 12.sp)
                       }
                   } else if (currentScreen == "السجل اليومي") {'''
+          friday_page = r'''                if (currentScreen == "الجمعة") {
+                      item {
+                          Text("برنامج يوم الجمعة", color = Gold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                          Text("اجعل يوم الجمعة عامراً بالصلاة على النبي ﷺ وقراءة سورة الكهف والصدقة", color = Muted, fontSize = 13.sp)
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(22.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text("الصلاة على النبي ﷺ", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                  Text("أكثر من الصلاة والسلام على رسول الله ﷺ", color = Cream, fontSize = 14.sp)
+                                  Spacer(Modifier.height(12.dp))
+                                  Text(salawatCount.toString(), color = Cream, fontSize = 42.sp, fontWeight = FontWeight.Bold)
+                                  Text("مرة مسجلة هذا الأسبوع", color = Muted, fontSize = 12.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Button(
+                                      onClick = {
+                                          salawatCount += 1
+                                          fridayPrefs.edit().putInt("salawat_$fridayKey", salawatCount).apply()
+                                      },
+                                      colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                      modifier = Modifier.fillMaxWidth()
+                                  ) { Text("اللهم صل وسلم على نبينا محمد ﷺ") }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("سورة الكهف", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("لا تنس قراءة سورة الكهف يوم الجمعة", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = kahfDone,
+                                          onCheckedChange = { checked ->
+                                              kahfDone = checked
+                                              fridayPrefs.edit().putBoolean("kahf_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("أتممت قراءة سورة الكهف", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("الصدقة", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("تصدّق بما تيسّر، ولو بالقليل، واحتسب الأجر عند الله", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = charityDone,
+                                          onCheckedChange = { checked ->
+                                              charityDone = checked
+                                              fridayPrefs.edit().putBoolean("charity_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("قمت بالصدقة هذا الأسبوع", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Text("تُحفظ إنجازاتك على هذا الهاتف، وتتجدد صفحة المتابعة مع كل يوم جمعة جديد.", color = Muted, fontSize = 12.sp)
+                      }
+                  } else if (currentScreen == "السجل اليومي") {'''
           replace_once(
               '                if (currentScreen == "السجل اليومي") {',
               friday_page,
