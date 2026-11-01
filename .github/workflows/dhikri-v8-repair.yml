@@ -248,7 +248,100 @@ jobs:
               'Text(if (count >= item.repetitions) "إعادة الذكر" else "اضغط للتسبيح", fontSize = 14.sp)',
               "adhkar button label"
           )
-          p.write_text(s, encoding="utf-8")
+          # Add persistent selectable color themes to the V8 Compose screen.
+          replace_once(
+              'listOf("الرئيسية", "الجمعة", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              'listOf("الرئيسية", "المظهر", "الجمعة", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              "theme navigation tab"
+          )
+          replace_once(
+              '              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }',
+              '''              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }
+              val themePrefs = remember { context.getSharedPreferences("dhikri_theme", Context.MODE_PRIVATE) }
+              var selectedTheme by remember { mutableStateOf(themePrefs.getString("selected", "emerald") ?: "emerald") }
+              val Forest = when (selectedTheme) {
+                  "night" -> Color(0xFF101D35)
+                  "turquoise" -> Color(0xFFF1FAF8)
+                  "purple" -> Color(0xFF281D3D)
+                  else -> Color(0xFF102F29)
+              }
+              val Forest2 = when (selectedTheme) {
+                  "night" -> Color(0xFF1D3152)
+                  "turquoise" -> Color(0xFFD8F0EC)
+                  "purple" -> Color(0xFF40305E)
+                  else -> Color(0xFF1C493C)
+              }
+              val Gold = when (selectedTheme) {
+                  "night" -> Color(0xFFD6E3F5)
+                  "turquoise" -> Color(0xFF168C83)
+                  "purple" -> Color(0xFFE8C8FF)
+                  else -> Color(0xFFE5C98C)
+              }
+              val Cream = when (selectedTheme) {
+                  "night" -> Color(0xFFF1F5FC)
+                  "turquoise" -> Color(0xFF173D3A)
+                  "purple" -> Color(0xFFF7F0FF)
+                  else -> Color(0xFFF4EEDC)
+              }
+              val Muted = when (selectedTheme) {
+                  "night" -> Color(0xFFB9C9E0)
+                  "turquoise" -> Color(0xFF557C77)
+                  "purple" -> Color(0xFFD0C0E4)
+                  else -> Color(0xFFB9C9BE)
+              }''',
+              "persistent theme palette"
+          )
+          theme_page = r'''                if (currentScreen == "المظهر") {
+                      item {
+                          Text("اختر المظهر الذي تحبه", color = Gold, fontSize = 23.sp, fontWeight = FontWeight.Bold)
+                          Text("غيّر ألوان ذِكري في أي وقت، وسيُحفظ اختيارك تلقائياً", color = Muted, fontSize = 13.sp)
+                      }
+                      item {
+                          val themes = listOf(
+                              Triple("emerald", "الأخضر الملكي والذهبي", "أناقة إسلامية كلاسيكية"),
+                              Triple("night", "الأزرق الليلي والفضي", "هدوء وراحة للعين"),
+                              Triple("turquoise", "الأبيض والتركواز", "مظهر مشرق ونظيف"),
+                              Triple("purple", "البنفسجي الملكي", "لمسة هادئة وفاخرة")
+                          )
+                          Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                              themes.forEach { theme ->
+                                  val chosen = selectedTheme == theme.first
+                                  val swatch = when (theme.first) {
+                                      "night" -> Color(0xFF1D3152)
+                                      "turquoise" -> Color(0xFFD8F0EC)
+                                      "purple" -> Color(0xFF40305E)
+                                      else -> Color(0xFF1C493C)
+                                  }
+                                  Card(
+                                      modifier = Modifier.fillMaxWidth().clickable {
+                                          selectedTheme = theme.first
+                                          themePrefs.edit().putString("selected", theme.first).apply()
+                                      },
+                                      colors = CardDefaults.cardColors(containerColor = swatch),
+                                      shape = RoundedCornerShape(18.dp),
+                                      border = if (chosen) androidx.compose.foundation.BorderStroke(2.dp, Gold) else null
+                                  ) {
+                                      Row(
+                                          Modifier.fillMaxWidth().padding(16.dp),
+                                          verticalAlignment = Alignment.CenterVertically
+                                      ) {
+                                          Column(Modifier.weight(1f)) {
+                                              Text(theme.second, color = if (theme.first == "turquoise") Color(0xFF173D3A) else Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                              Text(theme.third, color = if (theme.first == "turquoise") Color(0xFF557C77) else Color(0xFFD5DCE8), fontSize = 12.sp)
+                                          }
+                                          Text(if (chosen) "✓ مُفعّل" else "اختيار", color = if (theme.first == "turquoise") Color(0xFF168C83) else Color(0xFFE5C98C), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  } else if (currentScreen == "الجمعة") {'''
+          replace_once(
+              '                if (currentScreen == "الجمعة") {',
+              theme_page,
+              "theme selection page"
+          )
+                    p.write_text(s, encoding="utf-8")
           gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
           g = gradle.read_text(encoding="utf-8")
           import re
