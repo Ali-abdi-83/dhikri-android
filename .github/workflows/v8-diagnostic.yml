@@ -1,0 +1,11 @@
+name: V8 Workflow Diagnostic
+on:
+  push:
+    branches:
+      - v8-design-work
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm workflow parsing
+        run: echo "workflow parsed"
