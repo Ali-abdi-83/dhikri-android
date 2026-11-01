@@ -255,8 +255,8 @@ jobs:
               "theme navigation tab"
           )
           replace_once(
-              '              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }',
-              '''              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }
+              'val context = LocalContext.current',
+              '''val context = LocalContext.current
               val themePrefs = remember { context.getSharedPreferences("dhikri_theme", Context.MODE_PRIVATE) }
               var selectedTheme by remember { mutableStateOf(themePrefs.getString("selected", "emerald") ?: "emerald") }
               val Forest = when (selectedTheme) {
