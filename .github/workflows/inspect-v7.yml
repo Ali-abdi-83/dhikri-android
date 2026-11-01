@@ -1,0 +1,19 @@
+name: Inspect V7 source for V8
+on:
+  push:
+    branches: [v8-development]
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and list source
+        run: |
+          unzip -q Dhikri_Project_Adhkar_v7.zip -d extracted
+          echo "=== PROJECT FILES ==="
+          find extracted -type f | sort | head -250
+          echo "=== ANDROID SOURCE FILES ==="
+          find extracted -type f \( -name '*.kt' -o -name '*.java' -o -name '*.xml' -o -name '*.gradle' -o -name '*.gradle.kts' \) | sort
+          echo "=== SOURCE CONTENTS ==="
+          find extracted -type f \( -name '*.kt' -o -name '*.java' \) -print -exec sh -c 'echo "--- $1"; sed -n "1,260p" "$1"' _ {} \;
