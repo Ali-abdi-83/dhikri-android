@@ -251,6 +251,11 @@ jobs:
           p.write_text(s, encoding="utf-8")
           gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
           g = gradle.read_text(encoding="utf-8")
+          import re
+          app_ids = re.findall(r'applicationId\s*=\s*"([^"]+)"', g)
+          if len(app_ids) != 1:
+              raise SystemExit(f"Expected one applicationId; found {len(app_ids)}")
+          g = re.sub(r'applicationId\s*=\s*"[^"]+"', 'applicationId = "com.dhikri.app.v8"', g, count=1)
           if "versionCode = 6" not in g:
               raise SystemExit("Unexpected V7 versionCode; stopping to protect the project")
           g = g.replace("versionCode = 6", "versionCode = 7", 1).replace('versionName = "0.6.0"', 'versionName = "0.7.0"', 1)
@@ -274,6 +279,6 @@ jobs:
         run: gradle assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Dhikri-V8-APK
+          name: Dhikri-V8-Standalone-APK
           path: extracted/DhikriAndroid/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
