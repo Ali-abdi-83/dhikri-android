@@ -386,26 +386,26 @@ jobs:
                       }
                       item {
                           val sections = listOf(
-                              Triple("🌅", "أذكار الصباح", "نشاط وبركة", "الصباح"),
-                              Triple("🌙", "أذكار المساء", "راحة وطمأنينة", "المساء"),
-                              Triple("🤲", "أذكار متنوعة", "في كل وقت", "مكتبة الأذكار"),
-                              Triple("📿", "أذكار الصلاة", "قرب من الله", "مكتبة الأذكار"),
-                              Triple("⭐", "المفضلة", "أذكارك المختارة", "مكتبة الأذكار"),
-                              Triple("🕌", "الجمعة المباركة", "الصلاة على النبي ﷺ والكهف والصدقة", "الجمعة")
+                              listOf("🌅", "أذكار الصباح", "نشاط وبركة", "الصباح"),
+                              listOf("🌙", "أذكار المساء", "راحة وطمأنينة", "المساء"),
+                              listOf("🤲", "أذكار متنوعة", "في كل وقت", "مكتبة الأذكار"),
+                              listOf("📿", "أذكار الصلاة", "قرب من الله", "مكتبة الأذكار"),
+                              listOf("⭐", "المفضلة", "أذكارك المختارة", "مكتبة الأذكار"),
+                              listOf("🕌", "الجمعة المباركة", "الصلاة على النبي ﷺ والكهف والصدقة", "الجمعة")
                           )
                           Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                               sections.chunked(2).forEach { pair ->
                                   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                       pair.forEach { section ->
                                           Card(
-                                              modifier = Modifier.weight(1f).clickable { currentScreen = section.fourth },
+                                              modifier = Modifier.weight(1f).clickable { currentScreen = section[3] },
                                               colors = CardDefaults.cardColors(containerColor = Forest2),
                                               shape = RoundedCornerShape(20.dp)
                                           ) {
                                               Column(Modifier.fillMaxWidth().padding(14.dp)) {
-                                                  Text(section.first, fontSize = 27.sp)
-                                                  Text(section.second, color = Gold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                                  Text(section.third, color = Cream, fontSize = 12.sp)
+                                                  Text(section[0], fontSize = 27.sp)
+                                                  Text(section[1], color = Gold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                                  Text(section[2], color = Cream, fontSize = 12.sp)
                                               }
                                           }
                                       }
