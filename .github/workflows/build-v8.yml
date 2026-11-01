@@ -158,6 +158,38 @@ jobs:
               friday_page,
               "Friday page"
           )
+          replace_once(
+              """Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                Text(item.title, color = Gold, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(8.dp))
+                                Text(item.text, color = Cream, fontSize = 17.sp, lineHeight = 29.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("المصدر: ${item.source}", color = Muted, fontSize = 11.sp)
+                                Spacer(Modifier.height(10.dp))""",
+              """Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp)) {
+                                Text(item.title, color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(12.dp))
+                                Text(item.text, color = Cream, fontSize = 19.sp, lineHeight = 34.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Text("المصدر: ${item.source}", color = Muted, fontSize = 12.sp)
+                                Spacer(Modifier.height(14.dp))""",
+              "adhkar card spacing and text"
+          )
+          replace_once(
+              """Text("التكرار: ${item.repetitions}  •  المنجز: $count",
+                                        color = Muted, fontSize = 12.sp)""",
+              """Text("العدد المطلوب: ${item.repetitions}  •  المنجز: $count",
+                                        color = Gold, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)""",
+              "adhkar progress label"
+          )
+          replace_once(
+              """colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest)
+                                    ) { Text(if (count >= item.repetitions) "إعادة" else "تسبيح") }""",
+              """colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                        modifier = Modifier.heightIn(min = 48.dp)
+                                    ) { Text(if (count >= item.repetitions) "إعادة الذكر" else "اضغط للتسبيح", fontSize = 14.sp) }""",
+              "adhkar button size"
+          )
           p.write_text(s, encoding="utf-8")
           gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
           g = gradle.read_text(encoding="utf-8")
