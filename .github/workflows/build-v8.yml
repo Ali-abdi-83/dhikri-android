@@ -1,0 +1,143 @@
+name: Build Dhikri V8
+on:
+  push:
+    branches: [v8-development]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract V7 project and add V8 Friday page
+        run: |
+          unzip -q Dhikri_Project_Adhkar_v7.zip -d extracted
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("extracted/DhikriAndroid/app/src/main/java/com/dhikri/app/MainActivity.kt")
+          s = p.read_text(encoding="utf-8")
+          def replace_once(old, new, label):
+              global s
+              n = s.count(old)
+              if n != 1:
+                  raise SystemExit(f"Expected exactly one match for {label}; found {n}")
+              s = s.replace(old, new, 1)
+          replace_once(
+              "import java.time.LocalDate\n",
+              "import java.time.LocalDate\nimport java.time.DayOfWeek\nimport java.time.temporal.TemporalAdjusters\n",
+              "date imports"
+          )
+          replace_once(
+              'listOf("الرئيسية", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              'listOf("الرئيسية", "الجمعة", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              "navigation tabs"
+          )
+          replace_once(
+              '    val context = LocalContext.current\n',
+              '''    val context = LocalContext.current
+              val fridayPrefs = remember { context.getSharedPreferences("dhikri_friday", Context.MODE_PRIVATE) }
+              val fridayKey = remember { LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.FRIDAY)).toString() }
+              var salawatCount by remember { mutableStateOf(fridayPrefs.getInt("salawat_$fridayKey", 0)) }
+              var kahfDone by remember { mutableStateOf(fridayPrefs.getBoolean("kahf_$fridayKey", false)) }
+              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }
+          ''',
+              "Friday local state"
+          )
+          friday_page = r'''                if (currentScreen == "الجمعة") {
+                      item {
+                          Text("برنامج يوم الجمعة", color = Gold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                          Text("اجعل يوم الجمعة عامراً بالصلاة على النبي ﷺ وقراءة سورة الكهف والصدقة", color = Muted, fontSize = 13.sp)
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(22.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text("الصلاة على النبي ﷺ", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                  Text("أكثر من الصلاة والسلام على رسول الله ﷺ", color = Cream, fontSize = 14.sp)
+                                  Spacer(Modifier.height(12.dp))
+                                  Text(salawatCount.toString(), color = Cream, fontSize = 42.sp, fontWeight = FontWeight.Bold)
+                                  Text("مرة مسجلة هذا الأسبوع", color = Muted, fontSize = 12.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Button(
+                                      onClick = {
+                                          salawatCount += 1
+                                          fridayPrefs.edit().putInt("salawat_$fridayKey", salawatCount).apply()
+                                      },
+                                      colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                      modifier = Modifier.fillMaxWidth()
+                                  ) { Text("اللهم صل وسلم على نبينا محمد ﷺ") }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("سورة الكهف", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("لا تنس قراءة سورة الكهف يوم الجمعة", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = kahfDone,
+                                          onCheckedChange = { checked ->
+                                              kahfDone = checked
+                                              fridayPrefs.edit().putBoolean("kahf_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("أتممت قراءة سورة الكهف", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("الصدقة", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("تصدّق بما تيسّر، ولو بالقليل، واحتسب الأجر عند الله", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = charityDone,
+                                          onCheckedChange = { checked ->
+                                              charityDone = checked
+                                              fridayPrefs.edit().putBoolean("charity_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("قمت بالصدقة هذا الأسبوع", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Text("تُحفظ إنجازاتك على هذا الهاتف، وتتجدد صفحة المتابعة مع كل يوم جمعة جديد.", color = Muted, fontSize = 12.sp)
+                      }
+                  } else if (currentScreen == "السجل اليومي") {'''
+          replace_once(
+              '                if (currentScreen == "السجل اليومي") {',
+              friday_page,
+              "Friday page"
+          )
+          p.write_text(s, encoding="utf-8")
+          gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
+          g = gradle.read_text(encoding="utf-8")
+          if "versionCode = 6" not in g:
+              raise SystemExit("Unexpected V7 versionCode; stopping to protect the project")
+          g = g.replace("versionCode = 6", "versionCode = 7", 1).replace('versionName = "0.6.0"', 'versionName = "0.7.0"', 1)
+          gradle.write_text(g, encoding="utf-8")
+          print("V8 Friday page inserted; V7 source ZIP left unchanged.")
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -n 1)
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        working-directory: extracted/DhikriAndroid
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dhikri-V8-APK
+          path: extracted/DhikriAndroid/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
