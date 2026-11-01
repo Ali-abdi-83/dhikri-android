@@ -341,7 +341,7 @@ jobs:
               theme_page,
               "theme selection page"
           )
-                    p.write_text(s, encoding="utf-8")
+          p.write_text(s, encoding="utf-8")
           gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
           g = gradle.read_text(encoding="utf-8")
           import re
