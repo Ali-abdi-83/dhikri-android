@@ -1,0 +1,286 @@
+name: Dhikri V8 Build (Repair)
+on:
+  push:
+    branches: [v8-design-work]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract V7 project and add V8 Friday page
+        run: |
+          unzip -q Dhikri_Project_Adhkar_v7.zip -d extracted
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("extracted/DhikriAndroid/app/src/main/java/com/dhikri/app/MainActivity.kt")
+          s = p.read_text(encoding="utf-8")
+          def replace_once(old, new, label):
+              global s
+              n = s.count(old)
+              if n != 1:
+                  raise SystemExit(f"Expected exactly one match for {label}; found {n}")
+              s = s.replace(old, new, 1)
+          replace_once(
+              "import androidx.compose.foundation.clickable\n",
+              "import androidx.compose.foundation.clickable\nimport androidx.compose.foundation.horizontalScroll\nimport androidx.compose.foundation.rememberScrollState\n",
+              "horizontal navigation imports"
+          )
+          replace_once(
+              'Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {',
+              'Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {',
+              "scrollable navigation row"
+          )
+          replace_once(
+              'modifier = Modifier.weight(1f)\n                             ) { Text(screen, fontSize = 13.sp) }',
+              'modifier = Modifier.widthIn(min = 112.dp)\n                             ) { Text(screen, fontSize = 13.sp) }',
+              "navigation button sizing"
+          )
+          replace_once(
+              "import java.time.LocalDate\n",
+              "import java.time.LocalDate\nimport java.time.DayOfWeek\nimport java.time.temporal.TemporalAdjusters\n",
+              "date imports"
+          )
+          replace_once(
+              'listOf("الرئيسية", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              'listOf("الرئيسية", "الجمعة", "مكتبة الأذكار", "السجل اليومي", "التذكيرات")',
+              "navigation tabs"
+          )
+          replace_once(
+              '    val context = LocalContext.current\n',
+              '''    val context = LocalContext.current
+              val fridayPrefs = remember { context.getSharedPreferences("dhikri_friday", Context.MODE_PRIVATE) }
+              val fridayKey = remember { LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.FRIDAY)).toString() }
+              var salawatCount by remember { mutableStateOf(fridayPrefs.getInt("salawat_$fridayKey", 0)) }
+              var kahfDone by remember { mutableStateOf(fridayPrefs.getBoolean("kahf_$fridayKey", false)) }
+              var charityDone by remember { mutableStateOf(fridayPrefs.getBoolean("charity_$fridayKey", false)) }
+          ''',
+              "Friday local state"
+          )
+          morning_end = '''    DhikrItem("رضيت بالله رباً", "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا", 3, "سنن أبي داود والترمذي")
+)'''
+          morning_new = '''    DhikrItem("رضيت بالله رباً", "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا", 3, "سنن أبي داود والترمذي"),
+    DhikrItem("أصبحنا وأصبح الملك لله", "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ", 1, "صحيح مسلم"),
+    DhikrItem("اللهم بك أصبحنا", "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ", 1, "سنن أبي داود والترمذي"),
+    DhikrItem("حسبي الله لا إله إلا هو", "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ", 7, "سنن أبي داود؛ من أذكار الصباح والمساء"),
+    DhikrItem("سبحان الله وبحمده", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", 100, "صحيح مسلم؛ مائة مرة")
+)'''
+          if s.count(morning_end) != 1:
+              raise SystemExit("Morning list anchor mismatch; no source change made")
+          s = s.replace(morning_end, morning_new, 1)
+          evening_block = """private val eveningAdhkar = morningAdhkar.map { item ->
+              if (item.title == "رضيت بالله رباً") item.copy(source = "ثلاث مرات مساءً؛ سنن أبي داود والترمذي")
+              else item.copy(source = item.source.replace("صباحاً", "مساءً"))
+          }"""
+          evening_replacement = """private val eveningAdhkar = listOf(
+              DhikrItem("آية الكرسي", morningAdhkar[0].text, 1, "سورة البقرة: 255"),
+              DhikrItem("سورة الإخلاص", morningAdhkar[1].text, 3, "سورة الإخلاص؛ ثلاث مرات مساءً"),
+              DhikrItem("سورة الفلق", morningAdhkar[2].text, 3, "سورة الفلق؛ ثلاث مرات مساءً"),
+              DhikrItem("سورة الناس", morningAdhkar[3].text, 3, "سورة الناس؛ ثلاث مرات مساءً"),
+              DhikrItem("أمسينا وأمسى الملك لله", "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ", 1, "صحيح مسلم"),
+              DhikrItem("اللهم بك أمسينا", "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ الْمَصِيرُ", 1, "سنن أبي داود والترمذي"),
+              DhikrItem("سيد الاستغفار", morningAdhkar[4].text, 1, "صحيح البخاري؛ يقال مساءً"),
+              DhikrItem("ذكر الحفظ", morningAdhkar[5].text, 3, "سنن أبي داود والترمذي؛ ثلاث مرات مساءً"),
+              DhikrItem("رضيت بالله رباً", morningAdhkar[6].text, 3, "سنن أبي داود والترمذي؛ ثلاث مرات مساءً"),
+              DhikrItem("حسبي الله", "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ", 7, "سنن أبي داود؛ من أذكار الصباح والمساء"),
+              DhikrItem("سبحان الله وبحمده", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", 100, "صحيح مسلم؛ مائة مرة")
+          )"""
+          if s.count(evening_block) != 1:
+              raise SystemExit("Could not locate the original evening adhkar block exactly once")
+          s = s.replace(evening_block, evening_replacement, 1)
+          friday_page = r'''                if (currentScreen == "الجمعة") {
+                      item {
+                          Text("برنامج يوم الجمعة", color = Gold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                          Text("اجعل يوم الجمعة عامراً بالصلاة على النبي ﷺ وقراءة سورة الكهف والصدقة", color = Muted, fontSize = 13.sp)
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(22.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text("الصلاة على النبي ﷺ", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                  Text("أكثر من الصلاة والسلام على رسول الله ﷺ", color = Cream, fontSize = 14.sp)
+                                  Spacer(Modifier.height(12.dp))
+                                  Text(salawatCount.toString(), color = Cream, fontSize = 42.sp, fontWeight = FontWeight.Bold)
+                                  Text("مرة مسجلة هذا الأسبوع", color = Muted, fontSize = 12.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Button(
+                                      onClick = {
+                                          salawatCount += 1
+                                          fridayPrefs.edit().putInt("salawat_$fridayKey", salawatCount).apply()
+                                      },
+                                      colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                      modifier = Modifier.fillMaxWidth()
+                                  ) { Text("اللهم صل وسلم على نبينا محمد ﷺ") }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("سورة الكهف", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("لا تنس قراءة سورة الكهف يوم الجمعة", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = kahfDone,
+                                          onCheckedChange = { checked ->
+                                              kahfDone = checked
+                                              fridayPrefs.edit().putBoolean("kahf_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("أتممت قراءة سورة الكهف", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("الصدقة", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("تصدّق بما تيسّر، ولو بالقليل، واحتسب الأجر عند الله", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = charityDone,
+                                          onCheckedChange = { checked ->
+                                              charityDone = checked
+                                              fridayPrefs.edit().putBoolean("charity_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("قمت بالصدقة هذا الأسبوع", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Text("تُحفظ إنجازاتك على هذا الهاتف، وتتجدد صفحة المتابعة مع كل يوم جمعة جديد.", color = Muted, fontSize = 12.sp)
+                      }
+                  } else if (currentScreen == "السجل اليومي") {'''
+          friday_page = r'''                if (currentScreen == "الجمعة") {
+                      item {
+                          Text("برنامج يوم الجمعة", color = Gold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                          Text("اجعل يوم الجمعة عامراً بالصلاة على النبي ﷺ وقراءة سورة الكهف والصدقة", color = Muted, fontSize = 13.sp)
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(22.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                  Text("الصلاة على النبي ﷺ", color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                  Text("أكثر من الصلاة والسلام على رسول الله ﷺ", color = Cream, fontSize = 14.sp)
+                                  Spacer(Modifier.height(12.dp))
+                                  Text(salawatCount.toString(), color = Cream, fontSize = 42.sp, fontWeight = FontWeight.Bold)
+                                  Text("مرة مسجلة هذا الأسبوع", color = Muted, fontSize = 12.sp)
+                                  Spacer(Modifier.height(10.dp))
+                                  Button(
+                                      onClick = {
+                                          salawatCount += 1
+                                          fridayPrefs.edit().putInt("salawat_$fridayKey", salawatCount).apply()
+                                      },
+                                      colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                      modifier = Modifier.fillMaxWidth()
+                                  ) { Text("اللهم صل وسلم على نبينا محمد ﷺ") }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("سورة الكهف", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("لا تنس قراءة سورة الكهف يوم الجمعة", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = kahfDone,
+                                          onCheckedChange = { checked ->
+                                              kahfDone = checked
+                                              fridayPrefs.edit().putBoolean("kahf_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("أتممت قراءة سورة الكهف", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Card(colors = CardDefaults.cardColors(containerColor = Forest2), shape = RoundedCornerShape(18.dp)) {
+                              Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                  Text("الصدقة", color = Gold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                  Text("تصدّق بما تيسّر، ولو بالقليل، واحتسب الأجر عند الله", color = Cream, fontSize = 14.sp)
+                                  Row(verticalAlignment = Alignment.CenterVertically) {
+                                      Checkbox(
+                                          checked = charityDone,
+                                          onCheckedChange = { checked ->
+                                              charityDone = checked
+                                              fridayPrefs.edit().putBoolean("charity_$fridayKey", checked).apply()
+                                          }
+                                      )
+                                      Text("قمت بالصدقة هذا الأسبوع", color = Cream, fontSize = 14.sp)
+                                  }
+                              }
+                          }
+                      }
+                      item {
+                          Text("تُحفظ إنجازاتك على هذا الهاتف، وتتجدد صفحة المتابعة مع كل يوم جمعة جديد.", color = Muted, fontSize = 12.sp)
+                      }
+                  } else if (currentScreen == "السجل اليومي") {'''
+          replace_once(
+              '                if (currentScreen == "السجل اليومي") {',
+              friday_page,
+              "Friday page"
+          )
+          replace_once(
+              """Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                                Text(item.title, color = Gold, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(8.dp))
+                                Text(item.text, color = Cream, fontSize = 17.sp, lineHeight = 29.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("المصدر: ${item.source}", color = Muted, fontSize = 11.sp)
+                                Spacer(Modifier.height(10.dp))""",
+              """Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp)) {
+                                Text(item.title, color = Gold, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(12.dp))
+                                Text(item.text, color = Cream, fontSize = 19.sp, lineHeight = 34.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Text("المصدر: ${item.source}", color = Muted, fontSize = 12.sp)
+                                Spacer(Modifier.height(14.dp))""",
+              "adhkar card spacing and text"
+          )
+          replace_once(
+              """Text("التكرار: ${item.repetitions}  •  المنجز: $count",
+                                        color = Muted, fontSize = 12.sp)""",
+              """Text("العدد المطلوب: ${item.repetitions}  •  المنجز: $count",
+                                        color = Gold, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)""",
+              "adhkar progress label"
+          )
+          replace_once(
+              """colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest)
+                                    ) { Text(if (count >= item.repetitions) "إعادة" else "تسبيح") }""",
+              """colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Forest),
+                                        modifier = Modifier.heightIn(min = 48.dp)
+                                    ) { Text(if (count >= item.repetitions) "إعادة الذكر" else "اضغط للتسبيح", fontSize = 14.sp) }""",
+              "adhkar button size"
+          )
+          p.write_text(s, encoding="utf-8")
+          gradle = Path("extracted/DhikriAndroid/app/build.gradle.kts")
+          g = gradle.read_text(encoding="utf-8")
+          if "versionCode = 6" not in g:
+              raise SystemExit("Unexpected V7 versionCode; stopping to protect the project")
+          g = g.replace("versionCode = 6", "versionCode = 7", 1).replace('versionName = "0.6.0"', 'versionName = "0.7.0"', 1)
+          gradle.write_text(g, encoding="utf-8")
+          print("V8 Friday page inserted; V7 source ZIP left unchanged.")
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -n 1)
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build APK
+        working-directory: extracted/DhikriAndroid
+        run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dhikri-V8-APK
+          path: extracted/DhikriAndroid/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
