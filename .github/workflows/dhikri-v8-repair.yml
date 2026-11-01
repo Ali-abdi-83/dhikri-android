@@ -32,8 +32,8 @@ jobs:
               "scrollable navigation row"
           )
           replace_once(
-              'modifier = Modifier.weight(1f)\n                             ) { Text(screen, fontSize = 13.sp) }',
-              'modifier = Modifier.widthIn(min = 112.dp)\n                             ) { Text(screen, fontSize = 13.sp) }',
+              'modifier = Modifier.weight(1f)',
+              'modifier = Modifier.widthIn(min = 112.dp)',
               "navigation button sizing"
           )
           replace_once(
