@@ -1,7 +1,7 @@
 name: Read V7 source
 on:
   push:
-    branches: [v8-development]
+    branches: [v8-development, v8-design-work]
   workflow_dispatch:
 jobs:
   source:
