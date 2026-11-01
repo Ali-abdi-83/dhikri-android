@@ -6,14 +6,27 @@ on:
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        part: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
-      - name: Extract and list source
+      - name: Extract and inspect source
         run: |
           unzip -q Dhikri_Project_Adhkar_v7.zip -d extracted
-          echo "=== PROJECT FILES ==="
-          find extracted -type f | sort | head -250
-          echo "=== ANDROID SOURCE FILES ==="
-          find extracted -type f \( -name '*.kt' -o -name '*.java' -o -name '*.xml' -o -name '*.gradle' -o -name '*.gradle.kts' \) | sort
-          echo "=== SOURCE CONTENTS ==="
-          find extracted -type f \( -name '*.kt' -o -name '*.java' \) -print -exec sh -c 'echo "--- $1"; sed -n "1,260p" "$1"' _ {} \;
+          FILE=extracted/DhikriAndroid/app/src/main/java/com/dhikri/app/MainActivity.kt
+          echo "TOTAL LINES: $(wc -l < "$FILE")"
+          START=$(( ( ${{ matrix.part }} - 1 ) * 180 + 1 ))
+          END=$(( ${{ matrix.part }} * 180 ))
+          echo "=== SOURCE PART ${{ matrix.part }} LINES $START-$END ==="
+          sed -n "${START},${END}p" "$FILE"
+          if [ "${{ matrix.part }}" = "1" ]; then
+            echo "=== APP GRADLE ==="
+            cat extracted/DhikriAndroid/app/build.gradle.kts
+            echo "=== MANIFEST ==="
+            cat extracted/DhikriAndroid/app/src/main/AndroidManifest.xml
+            echo "=== ROOT GRADLE ==="
+            cat extracted/DhikriAndroid/build.gradle.kts
+            echo "=== SETTINGS ==="
+            cat extracted/DhikriAndroid/settings.gradle.kts
+          fi
